@@ -284,8 +284,16 @@ function authenticateEmployee() {
 }
 
 function logoutEmployee() {
+    // 1. Hide the portal interface elements securely
     document.getElementById('portalContainer').classList.add('hidden');
-    document.getElementById('loginOverlay').classList.remove('hidden');
+    
+    // 2. Clear any active session states if necessary
+    if (document.getElementById('loginOverlay')) {
+        document.getElementById('loginOverlay').classList.remove('hidden');
+    }
+    
+    // 3. Force the desktop browser to route directly back to your gateway home file
+    window.location.href = 'index.html';
 }
 
 function switchTab(tabId) {
