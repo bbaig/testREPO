@@ -476,12 +476,38 @@ function processSystemCheckIn() {
         status: "Pending"
     };
 
-    db.push(newTx);
-    saveDb(db);
-    
-    showFeedback("⚠️ Submitted for Approval! Checked-in successfully. Your record has been sent to the Admin Review Board.", "yellow");
-    document.getElementById('liveStatusBadge').innerText = "Pending Review";
-    initEmployeeEngine();
+fetch(API_URL, {
+    method: "POST",
+    body: JSON.stringify({
+        action: "submitAttendance",
+        empId: newTx.empId,
+        fullName: newTx.empName,
+        date: newTx.date,
+        attendanceType: newTx.type,
+        shift: newTx.shift,
+        otHours: newTx.otHours,
+        latitude: "0",
+        longitude: "0",
+        location: newTx.workspace
+    })
+})
+.then(r => r.json())
+.then(data => {
+    if (data.success) {
+        showFeedback(
+            "⚠️ Submitted for Approval! Checked-in successfully. Your record has been sent to the Admin Review Board.",
+            "yellow"
+        );
+        document.getElementById('liveStatusBadge').innerText = "Pending Review";
+        initEmployeeEngine();
+    } else {
+        showFeedback("❌ Failed to save attendance.", "red");
+    }
+})
+.catch(err => {
+    console.error(err);
+    showFeedback("❌ API Connection Failed.", "red");
+});
 }
 
 function showFeedback(text, color) {
