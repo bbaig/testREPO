@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skyline Agency - Gateway</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght=400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        body { background: #0f172a; display: flex; align-items: center; justify-content: center; height: 100vh; padding: 20px; color: white; }
+        .routing-card { background: #1e293b; border: 1px solid #334155; padding: 40px; border-radius: 24px; width: 100%; max-width: 450px; text-align: center; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3); }
+        h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; color: #f8fafc; }
+        p { color: #94a3b8; font-size: 14px; margin-bottom: 32px; }
+        /* Fixed the 'w-full;' bug here to 'width: 100%;' */
+        .btn { display: block; width: 100%; padding: 16px; margin-bottom: 16px; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.2s; text-decoration: none; text-align: center; }
+        .btn-employee { background: #4f46e5; color: white; }
+        .btn-employee:hover { background: #4338ca; }
+        .btn-admin { background: #2563eb; color: white; }
+        .btn-admin:hover { background: #1d4ed8; }
+        .loading { display: none; color: #38bdf8; font-weight: 500; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="routing-card">
+        <h1>Skyline Agency</h1>
+        <p>Select your identity profile to access your tracking terminal.</p>
+        
+        <button onclick="redirectToRole('Employee.html')" class="btn btn-employee">👤 Access Employee Portal</button>
+        <button onclick="redirectToRole('Admin.html')" class="btn btn-admin">⚙️ Access Admin Console</button>
+        
+        <div id="loadingText" class="loading">⚡ Establishing secure routing connection...</div>
+    </div>
+
+    <script>
+        // REMOVED window.onload: The page will now always stay open and wait for a button click!
+
+        function redirectToRole(targetFile) {
+            // Show the status indicator text
+            document.getElementById('loadingText').style.display = 'block';
+            
+            // Route seamlessly to your static folder file destination
+            window.location.href = targetFile;
+        }
+    </script>
+</body>
+</html>

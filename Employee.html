@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Employee Portal - Skyline Agency</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+body{ font-family:'Plus Jakarta Sans',sans-serif; background:#f8fafc; }
+.sidebar{ background:#0f172a; }
+.card{ background:#fff; border:1px solid #e2e8f0; border-radius:18px; box-shadow:0 10px 25px rgba(0,0,0,.05); }
+.kpi{ transition:.3s; }
+.kpi:hover{ transform:translateY(-4px); }
+.menu-item { transition: background 0.2s; cursor:pointer; }
+.menu-item:hover{ background:#1e293b; }
+.active-menu{ background:#4f46e5 !important; }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+</style>
+</head>
+<body>
+
+<div id="loginOverlay" class="fixed inset-0 bg-slate-900 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-8 shadow-2xl border border-slate-100">
+        <div class="text-center mb-6">
+            <h2 class="text-2xl font-bold text-slate-900">Skyline Agency</h2>
+            <p class="text-slate-500 text-sm mt-1">Employee Secure Authentication Node</p>
+        </div>
+        <div class="space-y-4">
+            <div>
+                <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Corporate Email / ID</label>
+                <input type="text" id="loginUser" value="EMP001" class="w-full p-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Secret Access Password</label>
+                <input type="password" id="loginPass" value="password123" class="w-full p-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+            </div>
+            <div id="loginError" class="hidden text-red-500 text-xs font-semibold text-center mt-2">
+                ❌ Invalid User ID. Please use EMP001 to test.
+            </div>
+            <button onclick="authenticateEmployee()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl transition shadow-md">
+                Sign In to Portal
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="portalContainer" class="flex h-screen hidden">
+    <div class="sidebar w-72 text-white flex flex-col">
+        <div class="p-6 border-b border-slate-700">
+            <h1 class="text-xl font-bold">Skyline Agency</h1>
+            <p class="text-indigo-400 text-xs uppercase tracking-wider mt-1">Employee Portal</p>
+        </div>
+        <div class="p-4 flex-1 space-y-1">
+            <div onclick="switchTab('emp-dashboard')" id="menu-emp-dashboard" class="menu-item active-menu rounded-xl px-4 py-3 font-semibold">🏠 Dashboard</div>
+            <div onclick="switchTab('emp-submit')" id="menu-emp-submit" class="menu-item rounded-xl px-4 py-3 font-semibold">📝 Submit Attendance</div>
+            <div onclick="switchTab('emp-history')" id="menu-emp-history" class="menu-item rounded-xl px-4 py-3 font-semibold">📋 My Attendance</div>
+            <div onclick="switchTab('emp-overtime')" id="menu-emp-overtime" class="menu-item rounded-xl px-4 py-3 font-semibold">⏱ My Overtime</div>
+            <div onclick="switchTab('emp-holidays')" id="menu-emp-holidays" class="menu-item rounded-xl px-4 py-3 font-semibold">🎉 Holidays</div>
+            <div onclick="switchTab('emp-profile')" id="menu-emp-profile" class="menu-item rounded-xl px-4 py-3 font-semibold">👤 Profile</div>
+        </div>
+        <div class="p-4 border-t border-slate-700">
+            <button onclick="logoutEmployee()" class="w-full bg-red-500 hover:bg-red-600 rounded-xl py-3 font-semibold transition">Logout</button>
+        </div>
+    </div>
+
+    <div class="flex-1 overflow-auto p-8">
+        <div class="flex justify-between items-center mb-8">
+            <div>
+                <h2 class="text-3xl font-bold text-slate-900">Welcome Back 👋</h2>
+                <p class="text-slate-500 mt-1">John Smith • EMP001</p>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="exportEmployeeDataCSV()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2.5 rounded-xl transition text-sm flex items-center gap-2 shadow-sm">
+                    📥 Export Records (CSV)
+                </button>
+                <div class="card px-5 py-2">
+                    <div class="text-xs text-slate-500 uppercase tracking-wide">Device Status</div>
+                    <div id="liveStatusBadge" class="font-bold text-slate-600 text-sm">Awaiting Entry</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="emp-dashboard" class="tab-content active space-y-8">
+            <div class="grid grid-cols-4 gap-6">
+                <div class="card kpi p-5 border-b-4 border-indigo-500">
+                    <div class="text-indigo-600 text-3xl">📅</div>
+                    <p class="text-slate-500 mt-3 text-sm font-medium">Approved Days</p>
+                    <h3 id="statApprovedDays" class="text-3xl font-bold mt-1 text-slate-800">0</h3>
+                </div>
+                <div class="card kpi p-5 border-b-4 border-yellow-500">
+                    <div class="text-yellow-500 text-3xl">⏳</div>
+                    <p class="text-slate-500 mt-3 text-sm font-medium">Pending Requests</p>
+                    <h3 id="statPendingDays" class="text-3xl font-bold mt-1 text-slate-800">0</h3>
+                </div>
+                <div class="card kpi p-5 border-b-4 border-green-500">
+                    <div class="text-green-500 text-3xl">⏱</div>
+                    <p class="text-slate-500 mt-3 text-sm font-medium">Approved OT Hours</p>
+                    <h3 id="statApprovedOt" class="text-3xl font-bold mt-1 text-slate-800">0h</h3>
+                </div>
+                <div class="card kpi p-5 border-b-4 border-red-500">
+                    <div class="text-red-500 text-3xl">❌</div>
+                    <p class="text-slate-500 mt-3 text-sm font-medium">Rejected Records</p>
+                    <h3 id="statRejectedDays" class="text-3xl font-bold mt-1 text-slate-800">0</h3>
+                </div>
+            </div>
+
+            <div class="card p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-bold text-slate-800 text-lg">Personal Metrics Analytics</h3>
+                    <div class="flex gap-3">
+                        <select id="empDashboardMonthFilter" onchange="renderEmployeeDashboardMetrics()" class="p-2 border border-slate-200 rounded-lg text-xs font-semibold bg-slate-50">
+                            <option value="ALL">All Months</option>
+                            <option value="2026-06">June 2026</option>
+                            <option value="2026-07">July 2026</option>
+                        </select>
+                        <select id="empDashboardShiftFilter" onchange="renderEmployeeDashboardMetrics()" class="p-2 border border-slate-200 rounded-lg text-xs font-semibold bg-slate-50">
+                            <option value="ALL">All Shifts</option>
+                            <option value="A">Shift A</option>
+                            <option value="B">Shift B</option>
+                            <option value="C">Shift C</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="empMetricsDashboardView" class="p-6 bg-slate-50 rounded-xl text-slate-600 font-medium text-sm space-y-2 border border-dashed">
+                    </div>
+            </div>
+        </div>
+
+        <div id="emp-submit" class="tab-content">
+            <div class="card p-8 border-l-4 border-indigo-600 space-y-6 max-w-4xl">
+                <div>
+                    <h3 class="font-bold text-xl text-slate-800">Submit Shift Records Ledger</h3>
+                    <p class="text-slate-500 text-sm mt-1">Provide classification values, target schedules, and verify localized physical workspace ranges.</p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Classification Duty Type</label>
+                        <select id="dutyType" onchange="toggleDutyTypeFields()" class="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 text-sm font-medium focus:outline-none">
+                            <option value="regular">1. Regular Shift Duty</option>
+                            <option value="overtime">2. Overtime Shift</option>
+                            <option value="leave">3. Leave</option>
+                            <option value="company-leave">4. Company Leave</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Shift Log Date</label>
+                        <input type="date" id="shiftLogDate" class="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 text-sm font-medium focus:outline-none">
+                    </div>
+                    <div id="shiftSelectContainer">
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Assigned Operational Shift</label>
+                        <select id="operationalShift" class="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 text-sm font-medium focus:outline-none">
+                            <option value="A">Shift A (06:00 - 14:00)</option>
+                            <option value="B">Shift B (14:00 - 22:00)</option>
+                            <option value="C">Shift C (22:00 - 06:00)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Target Corporate Hub</label>
+                        <select id="workspaceSelect" class="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 text-sm font-medium focus:outline-none">
+                            <option value="HQ">Corporate HQ (Whitefield Hub)</option>
+                            <option value="ECITY">Electronic City Complex</option>
+                            <option value="MANYATA">Manyata Tech Park Unit</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="overtimeFieldsContainer" class="hidden p-5 bg-indigo-50/50 rounded-xl border border-indigo-100 grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-indigo-900 uppercase mb-2">Overtime Shift Target Category</label>
+                        <select id="otShiftTarget" class="w-full p-2.5 border border-indigo-200 rounded-lg bg-white text-sm font-medium focus:outline-none">
+                            <option value="A">Shift A Context Overtime</option>
+                            <option value="B">Shift B Context Overtime</option>
+                            <option value="C">Shift C Context Overtime</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-indigo-900 uppercase mb-2">Overtime Hours (Max 8 Hours)</label>
+                        <input type="number" id="otHoursInput" min="1" max="12" value="2" class="w-full p-2.5 border border-indigo-200 rounded-lg bg-white text-sm font-medium focus:outline-none">
+                    </div>
+                </div>
+
+                <div class="pt-4 border-t border-slate-100">
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">GPS Verification Protocol</label>
+                    <div class="flex gap-4">
+                        <select id="simScenario" class="p-3 border border-slate-200 rounded-xl bg-slate-50 text-sm font-medium focus:outline-none w-2/3">
+                            <option value="inside">Simulate Within Allowed Geofence Radius (~20m Deviation)</option>
+                            <option value="outside">Simulate Outside Perimeter Boundary (~680m Breach Deviation)</option>
+                        </select>
+                        <button onclick="processSystemCheckIn()" class="w-1/3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition shadow-md text-sm">
+                            Validate Range & Submit Record
+                        </button>
+                    </div>
+                </div>
+                <div id="feedbackBox" class="hidden p-4 rounded-xl text-sm font-medium border"></div>
+            </div>
+        </div>
+
+        <div id="emp-history" class="tab-content">
+            <div class="card overflow-hidden">
+                <div class="p-5 border-b bg-slate-50/60 flex justify-between items-center">
+                    <h3 class="font-bold text-slate-800">Historical Tracking Registry</h3>
+                    <div class="flex gap-2">
+                        <select id="historyFilterType" onchange="renderAttendanceLogsTable()" class="p-2 border rounded-xl text-xs font-semibold">
+                            <option value="ALL">All Types</option>
+                            <option value="regular">Regular</option>
+                            <option value="overtime">Overtime</option>
+                            <option value="leave">Leaves</option>
+                        </select>
+                    </div>
+                </div>
+                <table class="w-full">
+                    <thead class="bg-slate-50">
+                        <tr>
+                            <th class="p-4 text-left text-xs font-semibold text-slate-500 uppercase">Date Logged</th>
+                            <th class="p-4 text-left text-xs font-semibold text-slate-500 uppercase">Workspace Center</th>
+                            <th class="p-4 text-left text-xs font-semibold text-slate-500 uppercase">Shift / Type Context</th>
+                            <th class="p-4 text-left text-xs font-semibold text-slate-500 uppercase">Details / Hours</th>
+                            <th class="p-4 text-left text-xs font-semibold text-slate-500 uppercase">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="attendanceLogsTable">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="emp-overtime" class="tab-content">
+            <div class="card p-6">
+                <h3 class="font-bold text-lg mb-4 text-slate-800">⏱ Logged Overtime Operations Queue</h3>
+                <div id="overtimeQueueContainer" class="space-y-3">
+                    </div>
+            </div>
+        </div>
+
+        <div id="emp-holidays" class="tab-content">
+            <div class="card p-6">
+                <h3 class="font-bold text-lg mb-4 text-slate-800">🎉 Corporate Holiday Manifest</h3>
+                <div class="divide-y divide-slate-100 text-sm font-medium">
+                    <div class="py-3.5 flex justify-between"><span>Independence Day National Holiday</span><span class="text-slate-400">2026-08-15</span></div>
+                    <div class="py-3.5 flex justify-between"><span>Ganesh Chaturthi Festive Break</span><span class="text-slate-400">2026-09-14</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="emp-profile" class="tab-content">
+            <div class="card p-6 max-w-xl">
+                <h3 class="font-bold text-lg mb-4 text-slate-800">👤 User Profile Manifest</h3>
+                <div class="grid grid-cols-2 gap-4 text-sm border-t pt-4">
+                    <div><span class="text-slate-400 block mb-0.5">Corporate Branch Unit</span><strong>Operations Architecture Center</strong></div>
+                    <div><span class="text-slate-400 block mb-0.5">Assigned Lead Supervisor</span><strong>Michael Brown</strong></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Mock initial storage payload matrix if blank
+if (!localStorage.getItem('skyline_attendance_db')) {
+    const baselineData = [
+        { id: "TX-101", empId: "EMP001", empName: "John Smith", date: "2026-06-18", workspace: "Corporate HQ (Whitefield)", shift: "A", type: "regular", otHours: 0, distance: 14, status: "Approved" },
+        { id: "TX-102", empId: "EMP001", empName: "John Smith", date: "2026-06-17", workspace: "Corporate HQ (Whitefield)", shift: "B", type: "overtime", otHours: 3, distance: 22, status: "Pending" }
+    ];
+    localStorage.setItem('skyline_attendance_db', JSON.stringify(baselineData));
+}
+
+document.getElementById('shiftLogDate').valueAsDate = new Date();
+
+function getDb() { return JSON.parse(localStorage.getItem('skyline_attendance_db')) || []; }
+function saveDb(arr) { localStorage.setItem('skyline_attendance_db', JSON.stringify(arr)); }
+
+function authenticateEmployee() {
+    if (document.getElementById('loginUser').value.trim().toUpperCase() === 'EMP001') {
+        document.getElementById('loginOverlay').classList.add('hidden');
+        document.getElementById('portalContainer').classList.remove('hidden');
+        initEmployeeEngine();
+    } else {
+        document.getElementById('loginError').classList.remove('hidden');
+    }
+}
+
+function logoutEmployee() {
+    document.getElementById('portalContainer').classList.add('hidden');
+    document.getElementById('loginOverlay').classList.remove('hidden');
+}
+
+function switchTab(tabId) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active-menu'));
+    document.getElementById(tabId).classList.add('active');
+    document.getElementById('menu-' + tabId).classList.add('active-menu');
+    initEmployeeEngine();
+}
+
+function toggleDutyTypeFields() {
+    const type = document.getElementById('dutyType').value;
+    document.getElementById('overtimeFieldsContainer').className = (type === 'overtime') ? "p-5 bg-indigo-50/50 rounded-xl border border-indigo-100 grid grid-cols-2 gap-4 block" : "hidden";
+    document.getElementById('shiftSelectContainer').className = (type==='leave'||type==='company-leave') ? "opacity-40 pointer-events-none" : "";
+}
+
+function initEmployeeEngine() {
+    renderEmployeeDashboardMetrics();
+    renderAttendanceLogsTable();
+    renderOvertimeQueue();
+}
+
+function renderEmployeeDashboardMetrics() {
+    const records = getDb().filter(r => r.empId === "EMP001");
+    const monthFilter = document.getElementById('empDashboardMonthFilter').value;
+    const shiftFilter = document.getElementById('empDashboardShiftFilter').value;
+
+    let filtered = records.filter(r => {
+        const matchesMonth = (monthFilter === 'ALL' || r.date.startsWith(monthFilter));
+        const matchesShift = (shiftFilter === 'ALL' || r.shift === shiftFilter);
+        return matchesMonth && matchesShift;
+    });
+
+    // Update global dashboard numbers
+    document.getElementById('statApprovedDays').innerText = records.filter(r => r.status === 'Approved').length;
+    document.getElementById('statPendingDays').innerText = records.filter(r => r.status === 'Pending').length;
+    document.getElementById('statRejectedDays').innerText = records.filter(r => r.status === 'Rejected').length;
+    
+    let totalOt = 0;
+    records.filter(r => r.status === 'Approved' && r.type === 'overtime').forEach(r => totalOt += Number(r.otHours));
+    document.getElementById('statApprovedOt').innerText = totalOt + "h";
+
+    // Dynamic Filtered Graph Breakdown text list implementation
+    const view = document.getElementById('empMetricsDashboardView');
+    view.innerHTML = `<div class='font-bold text-slate-800 border-b pb-2 mb-2 uppercase text-xs tracking-wider'>Filtered Metrics Dynamic Summary (${filtered.length} matching rows)</div>`;
+    
+    let counts = { regular: 0, overtime: 0, leave: 0 };
+    filtered.forEach(f => { if(counts[f.type] !== undefined) counts[f.type]++; });
+    
+    view.innerHTML += `<div>🟢 Approved/Pending Regular Duties Logged: <strong>${counts.regular} Shifts</strong></div>`;
+    view.innerHTML += `<div>⏱️ Active Overtime Assignments Target Queue: <strong>${counts.overtime} Shifts</strong></div>`;
+    view.innerHTML += `<div>🌴 Filed Leave Applications Indexed: <strong>${counts.leave} entries</strong></div>`;
+}
+
+function renderAttendanceLogsTable() {
+    const typeFilter = document.getElementById('historyFilterType').value;
+    const targetBody = document.getElementById('attendanceLogsTable');
+    targetBody.innerHTML = '';
+
+    getDb().filter(r => r.empId === "EMP001").forEach(r => {
+        if (typeFilter !== 'ALL' && r.type !== typeFilter) return;
+
+        let statusBadge = `<span class="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs font-bold">Pending Review</span>`;
+        if(r.status === 'Approved') statusBadge = `<span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold">Approved</span>`;
+        if(r.status === 'Rejected') statusBadge = `<span class="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-bold">Rejected</span>`;
+
+        targetBody.innerHTML += `
+            <tr class="border-t">
+                <td class="p-4 font-medium text-slate-700">${r.date}</td>
+                <td class="p-4 text-slate-600">${r.workspace}</td>
+                <td class="p-4"><span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-xs font-bold">Shift ${r.shift}</span> <span class="capitalize text-xs text-slate-500">(${r.type})</span></td>
+                <td class="p-4 text-sm text-slate-600">${r.type === 'overtime' ? r.otHours + ' Hours' : 'Standard'}</td>
+                <td class="p-4">${statusBadge}</td>
+            </tr>
+        `;
+    });
+}
+
+function renderOvertimeQueue() {
+    const container = document.getElementById('overtimeQueueContainer');
+    container.innerHTML = '';
+    const otRecords = getDb().filter(r => r.empId === "EMP001" && r.type === 'overtime');
+
+    if(otRecords.length === 0) {
+        container.innerHTML = `<p class="text-sm text-slate-400">No overtime entries recorded matching criteria.</p>`;
+        return;
+    }
+
+    otRecords.forEach(r => {
+        let badge = `<span class="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs font-bold">Pending</span>`;
+        if(r.status==='Approved') badge = `<span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold">Approved</span>`;
+        if(r.status==='Rejected') badge = `<span class="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-bold">Rejected</span>`;
+
+        container.innerHTML += `
+            <div class="bg-slate-50 rounded-xl p-4 flex justify-between items-center text-sm border border-slate-100">
+                <div><p class="text-xs text-slate-400 font-bold uppercase">Date</p><p class="font-semibold text-slate-800 mt-0.5">${r.date}</p></div>
+                <div><p class="text-xs text-slate-400 font-bold uppercase">Target Allocation</p><p class="font-semibold text-slate-800 mt-0.5">Shift ${r.shift} Overtime</p></div>
+                <div><p class="text-xs text-slate-400 font-bold uppercase">Quantity</p><p class="font-semibold text-slate-800 mt-0.5">${r.otHours} Hours</p></div>
+                <div>${badge}</div>
+            </div>
+        `;
+    });
+}
+
+function processSystemCheckIn() {
+    const feedbackBox = document.getElementById('feedbackBox');
+    const dutyType = document.getElementById('dutyType').value;
+    const dateValue = document.getElementById('shiftLogDate').value;
+    let activeShift = document.getElementById('operationalShift').value;
+    if (dutyType === 'overtime') activeShift = document.getElementById('otShiftTarget').value;
+
+    if (!dateValue) { alert('Specify date context metrics.'); return; }
+
+    // --- RULE VALIDATION 1: OVERTIME LIMIT CAP ---
+    let otHours = 0;
+    if (dutyType === 'overtime') {
+        otHours = parseInt(document.getElementById('otHoursInput').value, 10);
+        if (isNaN(otHours) || otHours <= 0) {
+            showFeedback("❌ Input Error! Please specify a valid quantity of overtime hours.", "red");
+            return;
+        }
+        if (otHours > 8) {
+            showFeedback("❌ Error: Overtime hours cannot exceed the maximum limit of 8 hours per shift.", "red");
+            return;
+        }
+    }
+
+    // --- RULE VALIDATION 2: DUPLICATE ENTRY BLOCKS ---
+    const db = getDb();
+    const isDuplicate = db.some(r => r.empId === "EMP001" && r.date === dateValue && r.shift === activeShift);
+    if (isDuplicate && (dutyType === 'regular' || dutyType === 'overtime')) {
+        showFeedback(`❌ Error: You have already submitted an attendance record for Shift ${activeShift} on this date. Duplicate submissions are blocked.`, "red");
+        return;
+    }
+
+    // GPS Processing Node Mock Router
+    const scenario = document.getElementById('simScenario').value;
+    if (scenario === 'outside' && dutyType !== 'leave' && dutyType !== 'company-leave') {
+        showFeedback("❌ Geofence Radius Out of Bounds! Range measurement detected perimeter breach deviation. Core check-in rejected.", "red");
+        return;
+    }
+
+    // Add entry to DB array
+    const newTx = {
+        id: "TX-" + Math.floor(Math.random() * 90000 + 10000),
+        empId: "EMP001",
+        empName: "John Smith",
+        date: dateValue,
+        workspace: dutyType.includes('leave') ? "N/A (Leave)" : document.getElementById('workspaceSelect').value,
+        shift: activeShift,
+        type: dutyType,
+        otHours: otHours,
+        distance: scenario === 'inside' ? 12 : 0,
+        status: "Pending"
+    };
+
+    db.push(newTx);
+    saveDb(db);
+    
+    showFeedback("⚠️ Submitted for Approval! Checked-in successfully. Your record has been sent to the Admin Review Board.", "yellow");
+    document.getElementById('liveStatusBadge').innerText = "Pending Review";
+    initEmployeeEngine();
+}
+
+function showFeedback(text, color) {
+    const b = document.getElementById('feedbackBox');
+    b.className = `p-4 rounded-xl text-sm font-medium border block bg-${color}-50 text-${color}-800 border-${color}-200`;
+    b.innerHTML = `<strong>${text}</strong>`;
+}
+
+function exportEmployeeDataCSV() {
+    const data = getDb().filter(r => r.empId === "EMP001");
+    let csv = "TransactionID,EmployeeID,EmployeeName,Date,Workspace,Shift,Type,OvertimeHours,DistanceError,Status\n";
+    data.forEach(r => {
+        csv += `${r.id},${r.empId},${r.empName},${r.date},"${r.workspace}",${r.shift},${r.type},${r.otHours},${r.distance}m,${r.status}\n`;
+    });
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `Employee_EMP001_Attendance_Report.csv`;
+    link.click();
+}
+
+window.onload = function() { if(!document.getElementById('portalContainer').classList.contains('hidden')) initEmployeeEngine(); };
+</script>
+</body>
+</html>
