@@ -19,8 +19,32 @@ body{ font-family:'Plus Jakarta Sans',sans-serif; background:#f8fafc; }
 .tab-content { display: none; }
 .tab-content.active { display: block; }
 </style>
+
+<style>
+.mobile-menu-btn{display:none}
+@media(max-width:768px){
+ #portalContainer{flex-direction:column;height:auto!important}
+ .sidebar{
+   position:fixed;left:-290px;top:0;height:100vh;z-index:1000;width:280px!important;
+   transition:.3s;
+ }
+ .sidebar.mobile-open{left:0}
+ .mobile-menu-btn{
+   display:block;position:fixed;top:10px;left:10px;z-index:1100;
+   padding:10px 12px;border-radius:8px;border:none;
+ }
+ .mobile-overlay.show{
+   position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:999;
+ }
+ .flex-1.overflow-auto.p-8{padding:70px 12px 12px 12px!important}
+ .grid.grid-cols-4,.grid.grid-cols-2{grid-template-columns:1fr!important}
+ table{display:block;overflow-x:auto;white-space:nowrap}
+ .flex.justify-between.items-center.mb-8{flex-direction:column;align-items:flex-start;gap:10px}
+}
+</style>
+
 </head>
-<body>
+<body><button class="mobile-menu-btn" onclick="toggleMenu()">☰ Menu</button><div id="ov" class="mobile-overlay"></div>
 
 <div id="loginOverlay" class="fixed inset-0 bg-slate-900 z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl max-w-md w-full p-8 shadow-2xl border border-slate-100">
@@ -478,6 +502,17 @@ function exportEmployeeDataCSV() {
 }
 
 window.onload = function() { if(!document.getElementById('portalContainer').classList.contains('hidden')) initEmployeeEngine(); };
+
+function toggleMenu(){
+ const s=document.querySelector('.sidebar');
+ const o=document.getElementById('ov');
+ s.classList.toggle('mobile-open');
+ o.classList.toggle('show');
+}
+document.addEventListener('click',e=>{
+ if(e.target.closest('.menu-item')) toggleMenu();
+});
+
 </script>
 </body>
 </html>
